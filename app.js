@@ -1,15 +1,12 @@
-import cors from "cors";
-import express from "express";
-import bodyParser from "body-parser";
+const initExpress = require('./config/express.js');
+const express = require("express");
 
-const app = express()
-const port = 5000
+const app = express();
+const port = 5000;
 
-app.use(bodyParser.urlencoded({ extended: false }))
+initExpress(app);
 
-app.use(bodyParser.json())
-
-app.use(cors({origin: 'http://localhost:3000'}));
+app.use(require('./app/modules/artefacts/routes'));
 
 app.listen(port, () => {
   console.log(`The chat server is listening on port ${port}`)
