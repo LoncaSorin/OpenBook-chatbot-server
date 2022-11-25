@@ -1,12 +1,13 @@
 const mysql = require('mysql');
+const { MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_PORT, MYSQL_DATABASE } = require("./index");
 
 const initMysql = () => {
   const connection = mysql.createConnection({
-    host: 'sql7.freemysqlhosting.net',
-    user: 'sql7579828',
-    password: 'lLNXklvsII',
-    port: '3306',
-    database: 'sql7579828'
+    host: MYSQL_HOST,
+    user: MYSQL_USER,
+    password: MYSQL_PASSWORD,
+    port: MYSQL_PORT,
+    database: MYSQL_DATABASE
   });
 
   connection.connect();
@@ -18,5 +19,7 @@ const closeMysql = (connection) => {
   return connection.end();
 }
 
-module.exports.initMysql = initMysql;
-module.exports.closeMysql = closeMysql;
+module.exports = {
+  initMysql,
+  closeMysql
+}
