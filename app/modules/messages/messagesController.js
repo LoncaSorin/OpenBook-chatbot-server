@@ -1,15 +1,15 @@
-const { closeMysql, initMysql } = require("../../../config/mysql.js");
 const { formatRoute } = require("../../utils/formatters");
 const request = require('request');
 const { OPENBOOK_POST_QUESTION } = require("../../constants/openBook");
 const { v4: uuidv4 } = require("uuid");
 const { OPENBOOK_API_KEY } = require("../../../config/index.js");
-const {GOOD_ANSWER} = require("../../constants/general");
+const { GOOD_ANSWER } = require("../../constants/general");
+const { getConnection } = require("../../../config/mysql");
 
 async function getMessages(req, res) {
-  const connection = initMysql();
   const { artefactId } = req.params;
   const url = formatRoute(OPENBOOK_POST_QUESTION, { artefactId });
+  const connection = getConnection();
 
   try {
     const query = 'SELECT * FROM messages';
@@ -75,14 +75,12 @@ async function getMessages(req, res) {
     });
   } catch (error) {
     res.send({ status: 500, error })
-  } finally {
-    closeMysql(connection);
   }
 }
 
 async function updateMessage(req, res) {
-  const connection = initMysql();
   const { feedback, messageId } = req.resources;
+  const connection = getConnection();
 
   try {
     const query = `UPDATE messages SET feedback = '${feedback}' WHERE id = '${messageId}'`;
@@ -96,8 +94,6 @@ async function updateMessage(req, res) {
     });
   } catch (error) {
     res.send({ status: 500, error })
-  } finally {
-    closeMysql(connection);
   }
 }
 
@@ -106,6 +102,7 @@ async function addQuestion(req, res) {
   const { questionInfo } = req.resources;
   const id = uuidv4();
   const url = formatRoute(OPENBOOK_POST_QUESTION, { artefactId });
+  const connection = getConnection();
 
   request.post({
     url,
@@ -121,7 +118,6 @@ async function addQuestion(req, res) {
 
       if (!error && statusCode === 200) {
         const { result } = body;
-        const connection = initMysql();
 
         try {
           const query = `INSERT INTO messages (id, artefactId, question, answer) VALUES ('${id.toString()}', '${artefactId}', ${JSON.stringify(questionInfo?.query)}, ${JSON.stringify(result?.answer)})`;
@@ -140,8 +136,6 @@ async function addQuestion(req, res) {
           });
         } catch (err) {
           res.send({ status: 500, error: err })
-        } finally {
-          closeMysql(connection);
         }
       } else {
         res.send({ status: 500, error })

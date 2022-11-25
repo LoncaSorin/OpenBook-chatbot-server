@@ -4,7 +4,7 @@ const missingArtefactId = {
 };
 
 const incorrectFeedback = {
-  message: 'The provided feedback is incorect.',
+  message: 'The provided feedback is incorrect.',
   status: 422,
 };
 

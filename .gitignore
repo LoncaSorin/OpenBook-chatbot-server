@@ -7,7 +7,6 @@
 node_modules/
 dist/
 data/
-.env
 # Log files
 *.log
 

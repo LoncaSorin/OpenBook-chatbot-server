@@ -1,10 +1,10 @@
-const { closeMysql, initMysql } = require("../../../config/mysql.js");
+const { getConnection } = require("../../../config/mysql");
 const uuidv4 = require("uuid").v4;
 
 async function createArtefact(req, res) {
-  const connection = initMysql();
   const id = uuidv4();
   const { artefactId } = req.resources;
+  const connection = getConnection();
 
   try {
     const query = `INSERT INTO artefacts (id, artefactId) VALUES ('${id.toString()}', '${artefactId}')`;
@@ -18,8 +18,6 @@ async function createArtefact(req, res) {
     });
   } catch (error) {
     res.send({ status: 500, error })
-  } finally {
-    closeMysql(connection);
   }
 }
 
