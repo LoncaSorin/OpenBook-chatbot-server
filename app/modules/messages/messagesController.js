@@ -4,10 +4,12 @@ const request = require('request');
 const { OPENBOOK_POST_QUESTION } = require("../../constants/openBook");
 const { v4: uuidv4 } = require("uuid");
 const { OPENBOOK_API_KEY } = require("../../../config/index.js");
+const {GOOD_ANSWER} = require("../../constants/general");
 
 async function getMessages(req, res) {
   const connection = initMysql();
   const { artefactId } = req.params;
+  const url = formatRoute(OPENBOOK_POST_QUESTION, { artefactId });
 
   try {
     const query = 'SELECT * FROM messages';
@@ -17,7 +19,59 @@ async function getMessages(req, res) {
         throw error;
       }
 
-      res.send(results || []);
+      const arrayOfPromises = [];
+
+      results.forEach((message) => {
+        if (message?.feedback === GOOD_ANSWER) {
+          const questionInfo = {
+            query: message.question,
+            history: [],
+            answer_level: 'strict',
+          }
+
+          arrayOfPromises.push(
+            new Promise(resolve => {
+              request.post({
+                  url,
+                  body: questionInfo,
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `bearer ${OPENBOOK_API_KEY}`
+                  },
+                  json: true,
+                },
+                async (error, response, body) => {
+                  const { statusCode } = response;
+                  const { result } = body;
+                  const hasDifferentAnswers = message.answer !== result?.answer;
+
+                  if (!error && statusCode === 200) {
+                    resolve({
+                      ...message,
+                      ...(hasDifferentAnswers ? { newAnswer: result?.answer } : {}),
+                    });
+                  } else {
+                    throw error;
+                  }
+                })
+            })
+          );
+        }
+      })
+
+      Promise.all(arrayOfPromises)
+        .then((messages) => {
+          const updatedResults = results.map((message) => {
+            const foundMessage = messages.find((item) => item.id === message.id);
+
+            return foundMessage ? foundMessage : message;
+          });
+
+          return res.send(updatedResults);
+        })
+        .catch((err) => {
+          res.send({ status: 500, err })
+        })
     });
   } catch (error) {
     res.send({ status: 500, error })
